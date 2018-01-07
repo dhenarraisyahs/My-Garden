@@ -56,47 +56,56 @@ public class PlantWateringService extends IntentService {
     }
 
     private void handleActionUpdatePlantWidgets() {
+        //Query to get the plant that's most in need for water (last watered)
         Uri PLANT_URI = BASE_CONTENT_URI.buildUpon().appendPath(PATH_PLANTS).build();
         Cursor cursor = getContentResolver().query(
                 PLANT_URI,
                 null,
                 null,
                 null,
-                PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME);
-        int imgRes = R.drawable.grass;
-        boolean water = false;
+                PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME
+        );
+        // Extract the plant details
+        int imgRes = R.drawable.grass; // Default image in case our garden is empty
+        boolean canWater = false; // Default to hide the water drop button
         long plantId = INVALID_PLANT_ID;
         if (cursor != null && cursor.getCount() > 0) {
             cursor.moveToFirst();
             int idIndex = cursor.getColumnIndex(PlantContract.PlantEntry._ID);
             int createTimeIndex = cursor.getColumnIndex(PlantContract.PlantEntry.COLUMN_CREATION_TIME);
             int waterTimeIndex = cursor.getColumnIndex(PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME);
-            int platTypeIndex = cursor.getColumnIndex(PlantContract.PlantEntry.COLUMN_PLANT_TYPE);
+            int plantTypeIndex = cursor.getColumnIndex(PlantContract.PlantEntry.COLUMN_PLANT_TYPE);
             plantId = cursor.getLong(idIndex);
             long timeNow = System.currentTimeMillis();
             long wateredAt = cursor.getLong(waterTimeIndex);
             long createdAt = cursor.getLong(createTimeIndex);
-            int plantType = cursor.getInt(platTypeIndex);
+            int plantType = cursor.getInt(plantTypeIndex);
             cursor.close();
-            water = (timeNow - wateredAt) > PlantUtils.MIN_AGE_BETWEEN_WATER && (timeNow - wateredAt) < PlantUtils.MAX_AGE_WITHOUT_WATER;
+            canWater = (timeNow - wateredAt) > PlantUtils.MIN_AGE_BETWEEN_WATER &&
+                    (timeNow - wateredAt) < PlantUtils.MAX_AGE_WITHOUT_WATER;
             imgRes = PlantUtils.getPlantImageRes(this, timeNow - createdAt, timeNow - wateredAt, plantType);
         }
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(this, PlantWidgetProvider.class));
+        //Trigger data update to handle the GridView widgets and force a data refresh
         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_grid_view);
-        PlantWidgetProvider.updatePlantWidget(this, appWidgetManager, imgRes, plantId, water, appWidgetIds);
+        //Now update all widgets
+        PlantWidgetProvider.updatePlantWidget(this, appWidgetManager, imgRes, plantId, canWater, appWidgetIds);
     }
 
     private void handleActionWaterPlant(long plantId) {
-        Uri PLANTS_URI = ContentUris.withAppendedId(BASE_CONTENT_URI.buildUpon().appendPath(PATH_PLANTS).build(), plantId);
+        Uri SINGLE_PLANT_URI = ContentUris.withAppendedId(
+                BASE_CONTENT_URI.buildUpon().appendPath(PATH_PLANTS).build(), plantId);
         ContentValues contentValues = new ContentValues();
         long timeNow = System.currentTimeMillis();
         contentValues.put(PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME, timeNow);
+        // Update only if that plant is still alive
         getContentResolver().update(
-                PLANTS_URI,
+                SINGLE_PLANT_URI,
                 contentValues,
                 PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME + ">?",
                 new String[]{String.valueOf(timeNow - PlantUtils.MAX_AGE_WITHOUT_WATER)});
+        // Always update widgets after watering plants
         startActionUpdatePlantWidget(this);
     }
 }

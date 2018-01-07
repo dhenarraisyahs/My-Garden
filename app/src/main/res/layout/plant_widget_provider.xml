@@ -9,8 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:src="@drawable/water_drop_blue"
-        tools:ignore="VectorDrawableCompat" />
+        android:src="@drawable/water_drop_blue" />
 
     <ImageView
         android:id="@+id/widget_plant_image"
@@ -18,5 +17,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:src="@drawable/grass" />
+
+    <TextView
+        android:id="@+id/widget_plant_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:text="123" />
 
 </LinearLayout>
