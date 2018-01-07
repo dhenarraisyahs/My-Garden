@@ -52,7 +52,12 @@ public class PlantWateringService extends IntentService {
 
     private void handleActionUpdatePlantWidgets() {
         Uri PLANT_URI = BASE_CONTENT_URI.buildUpon().appendPath(PATH_PLANTS).build();
-        Cursor cursor = getContentResolver().query(PLANT_URI, null, null, null, PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME);
+        Cursor cursor = getContentResolver().query(
+                PLANT_URI,
+                null,
+                null,
+                null,
+                PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME);
         int imgRes = R.drawable.grass;
         if (cursor != null && cursor.getCount() > 0) {
             cursor.moveToFirst();
@@ -76,6 +81,10 @@ public class PlantWateringService extends IntentService {
         ContentValues contentValues = new ContentValues();
         long timeNow = System.currentTimeMillis();
         contentValues.put(PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME, timeNow);
-        getContentResolver().update(PLANTS_URI, contentValues, PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME + ">?", new String[]{String.valueOf(timeNow - PlantUtils.MAX_AGE_WITHOUT_WATER)});
+        getContentResolver().update(
+                PLANTS_URI,
+                contentValues,
+                PlantContract.PlantEntry.COLUMN_LAST_WATERED_TIME + ">?",
+                new String[]{String.valueOf(timeNow - PlantUtils.MAX_AGE_WITHOUT_WATER)});
     }
 }
